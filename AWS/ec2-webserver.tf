@@ -143,7 +143,6 @@ output "origin_access_identity" {
 }
 
 
-
 resource "aws_cloudfront_distribution" "s3Dis" {
   origin {
     domain_name = "${aws_s3_bucket.s3-task1vol.bucket_regional_domain_name}"
@@ -188,4 +187,45 @@ resource "aws_s3_bucket_object" "objbucket1" {
   bucket = "s3-task1vol"
   key    = "cloud.png"
 }
+    
+## ===== Same configuration using EFS instead of EBS ===== ##
+    resource "aws_efs_file_system" "efs_volume2" {
+  depends_on = [aws_security_group.security_1allow,
+  aws_instance.osConfig]
+  creation_token = "efs_volume_tok"
+  tags = {
+    Name = "efsVol"
+  }
+}
+
+resource "aws_efs_mount_target" "efs_myMount" {
+
+  subnet_id      = "${aws_instance.osConfig.subnet_id}"
+  file_system_id = "${aws_efs_file_system.efs_volume2.id}"
+
+}
+
+resource "null_resource" "remoteRes" {
+
+  depends_on = [
+    aws_efs_mount_target.efs_myMount,
+  ]
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = tls_private_key.tkey.private_key_pem
+    host        = aws_instance.osConfig.public_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mount -t ${aws_efs_file_system.efs_volume2.id}:/ /var/www/html",
+      "sudo rm -rf /var/www/html/* ",
+      "sudo git clone  https://github.com/poojan1812/hybrid-cloud.git  /var/www/html/",
+
+    ]
+  }
+}
+
+    
 
