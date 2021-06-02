@@ -37,3 +37,29 @@ resource "aws_internet_gateway" "NewGW" {
   }
   
 }
+//###===== Creation of Routing table =====###
+resource "aws_route_table" "NewRoute" {
+  vpc_id = aws_vpc.Custom.id
+  route = [ {
+    cidr_block = "0.0.0.0/0"
+    egress_only_gateway_id = "value"
+    gateway_id = aws_internet_gateway.NewGW.id
+    instance_id = "value"
+    ipv6_cidr_block = "value"
+    local_gateway_id = "value"
+    nat_gateway_id = "value"
+    network_interface_id = "value"
+    transit_gateway_id = "value"
+    vpc_endpoint_id = "value"
+    vpc_peering_connection_id = "value"
+  } ]
+  tags = {
+    "Name" = "Route table with internet gatewat"
+  }
+}
+
+//###===== Association of routing table =====###
+resource "aws_route_table_association" "PublicRoute" {
+ route_table_id = aws_route_table.NewRoute.id
+  subnet_id = aws_subnet.Public.id
+}
